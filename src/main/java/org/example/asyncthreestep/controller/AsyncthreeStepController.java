@@ -4,7 +4,6 @@ import org.example.asyncthreestep.dto.AiRequest;
 import org.example.asyncthreestep.dto.AiResponse;
 import org.example.asyncthreestep.service.GenAIService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
