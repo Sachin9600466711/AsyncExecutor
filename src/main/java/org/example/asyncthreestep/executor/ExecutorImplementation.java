@@ -8,8 +8,6 @@ import org.example.asyncthreestep.dto.ChatReply;
 import org.example.asyncthreestep.model.GenAI;
 import org.example.asyncthreestep.producer.RabbitMQProducer;
 import org.example.asyncthreestep.repository.Genai;
-import org.springframework.amqp.rabbit.annotation.EnableRabbit;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -53,7 +51,7 @@ public class ExecutorImplementation implements AsyncThreeStepWorker<AiRequest, S
     }
 
     @Override
-    public void doIntegration(AiRequest request, String requestId) {
+    public AiResponse doIntegration(AiRequest request, String requestId) {
         AiResponse aiResponse = new AiResponse();
         aiResponse.setRequest(request.getRequest());
         aiResponse.setLanguage(request.getLanguage());
@@ -65,17 +63,16 @@ public class ExecutorImplementation implements AsyncThreeStepWorker<AiRequest, S
         ResponseEntity<ChatReply> response = restTemplate.postForEntity(url, entity, ChatReply.class);
         aiResponse.setResponse(response.getBody().getReply());
         aiResponse.setRequestID(requestId);
-        rabbitMQProducer.sendMessage(aiResponse);
+        return aiResponse;
     }
 
+
     @Override
-    @Transactional
-    public AiResponse doAfterIntegration() {
-        AiResponse response = rabbitMQConsumer.consume();
-        GenAI model = genai.findByRequestID(response.getRequestID());
-        model.setResponse(response.getResponse());
+    public AiResponse doAfterIntegration(AiResponse aiResponse) {
+        GenAI model = genai.findByRequestID(aiResponse.getRequestID());
+        model.setResponse(aiResponse.getResponse());
         genai.save(model);
-        return response;
+        return aiResponse;
     }
 
 
@@ -83,8 +80,8 @@ public class ExecutorImplementation implements AsyncThreeStepWorker<AiRequest, S
     @Transactional
     public void execute(AiRequest req) {
         String context = prepareRequestAndSave(req);
-        doIntegration(req, context);
-        doAfterIntegration();
+        AiResponse response = doIntegration(req, context);
+        doAfterIntegration(response);
         System.out.println("Execution completed for: ");
 
     }

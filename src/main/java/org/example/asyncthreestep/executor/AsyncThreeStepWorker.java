@@ -2,19 +2,20 @@ package org.example.asyncthreestep.executor;
 
 import org.example.asyncthreestep.dto.AiRequest;
 import org.example.asyncthreestep.dto.AiResponse;
+import org.springframework.transaction.annotation.Transactional;
 
 
 public interface AsyncThreeStepWorker<
-        REQ,        // Request type
-        ID,         // Request ID type
-        INT_RES,    // Integration response type
-        FINAL_RES   // Final response type
+        REQ,
+        ID,
+        INT_RES,
+        FINAL_RES
         > {
     ID prepareRequestAndSave(REQ request);
 
-    void doIntegration(REQ req, ID id);
+    INT_RES doIntegration(REQ req, ID id);
 
-    FINAL_RES doAfterIntegration();
+    FINAL_RES doAfterIntegration(INT_RES res);
 
     void execute(REQ req);
 
